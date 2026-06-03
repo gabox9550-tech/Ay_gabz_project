@@ -120,7 +120,7 @@ async function initializeSchema() {
             rfc VARCHAR(50),
             tipo_instalador VARCHAR(50) NOT NULL DEFAULT 'Residencial',
             usuario_id INT,
-            activo BOOLEAN DEFAULT 1,
+            activo BOOLEAN DEFAULT true,
             FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
         )
     `);
@@ -152,7 +152,7 @@ async function initializeSchema() {
             cliente_id INT NOT NULL,
             direccion TEXT NOT NULL,
             etiqueta VARCHAR(100) DEFAULT 'Casa',
-            es_predeterminada BOOLEAN DEFAULT 0,
+            es_predeterminada BOOLEAN DEFAULT false,
             fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(cliente_id) REFERENCES clientes(id) ON DELETE CASCADE
         )
@@ -170,7 +170,7 @@ async function initializeSchema() {
             nueva_fecha DATE,
             nueva_hora VARCHAR(10),
             estado VARCHAR(50) DEFAULT 'Pendiente',
-            leida BOOLEAN DEFAULT 0,
+            leida BOOLEAN DEFAULT false,
             fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(instalacion_id) REFERENCES instalaciones(id) ON DELETE NO ACTION
         )
@@ -201,7 +201,7 @@ async function initializeSchema() {
             chat_id INT NOT NULL,
             emisor_id INT NOT NULL,
             contenido TEXT NOT NULL,
-            leido BOOLEAN DEFAULT 0,
+            leido BOOLEAN DEFAULT false,
             fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(chat_id) REFERENCES chats(id) ON DELETE CASCADE,
             FOREIGN KEY(emisor_id) REFERENCES usuarios(id) ON DELETE NO ACTION
@@ -235,7 +235,10 @@ class PgRequest {
             pgSql = pgSql.replace(regex, '$' + (index + 1));
         });
         
-        pgSql = pgSql.replace(/OUTPUT INSERTED\.id/g, 'RETURNING id');
+        if (pgSql.includes('OUTPUT INSERTED.id')) {
+             pgSql = pgSql.replace(/\s*OUTPUT INSERTED\.id\s*/g, ' ');
+             pgSql += ' RETURNING id';
+        }
         pgSql = pgSql.replace(/TOP 1 (.*?) FROM/i, '$1 FROM');
         if (pgSql.match(/ORDER BY.*DESC$/i) && sqlString.match(/TOP 1/i)) {
              pgSql += ' LIMIT 1';
@@ -552,7 +555,7 @@ export const dbOps = {
     },
     getTecnicos: async () => {
         const pool = await connectDB();
-        const result = await pool.query('SELECT * FROM tecnicos WHERE activo = 1 ORDER BY nombre_completo ASC');
+        const result = await pool.query('SELECT * FROM tecnicos WHERE activo = true ORDER BY nombre_completo ASC');
         return result.recordset;
     },
     getTecnicoByUsuarioId: async (usuario_id) => {
@@ -661,7 +664,7 @@ export const dbOps = {
             .input('tipo', sql.NVarChar, tipo)
             .query(`
                 SELECT t.* FROM tecnicos t
-                WHERE t.activo = 1 
+                WHERE t.activo = true 
                 AND t.tipo_instalador = @tipo
                 AND t.id NOT IN (
                     SELECT i.tecnico_id FROM instalaciones i
@@ -682,7 +685,7 @@ export const dbOps = {
                  AND i.fecha_instalacion = CAST(CURRENT_TIMESTAMP AS DATE) 
                  AND i.estado NOT IN ('Cancelada', 'Realizada')) as instalaciones_hoy
             FROM tecnicos t
-            WHERE t.activo = 1
+            WHERE t.activo = true
             ORDER BY t.nombre_completo ASC
         `);
         return result.recordset;
@@ -706,7 +709,7 @@ export const dbOps = {
         const pool = await connectDB();
         if (es_predeterminada) {
             await pool.request().input('cid', sql.Int, cliente_id)
-                .query('UPDATE direcciones_cliente SET es_predeterminada = 0 WHERE cliente_id = @cid');
+                .query('UPDATE direcciones_cliente SET es_predeterminada = false WHERE cliente_id = @cid');
         }
         const result = await pool.request()
             .input('cid', sql.Int, cliente_id)
@@ -730,9 +733,9 @@ export const dbOps = {
     setDireccionPredeterminada: async (id, cliente_id) => {
         const pool = await connectDB();
         await pool.request().input('cid', sql.Int, cliente_id)
-            .query('UPDATE direcciones_cliente SET es_predeterminada = 0 WHERE cliente_id = @cid');
+            .query('UPDATE direcciones_cliente SET es_predeterminada = false WHERE cliente_id = @cid');
         await pool.request().input('id', sql.Int, id)
-            .query('UPDATE direcciones_cliente SET es_predeterminada = 1 WHERE id = @id');
+            .query('UPDATE direcciones_cliente SET es_predeterminada = true WHERE id = @id');
         // Sync to clientes table
         const dir = await pool.request().input('id', sql.Int, id).query('SELECT direccion FROM direcciones_cliente WHERE id = @id');
         if (dir.recordset[0]) {
@@ -793,18 +796,18 @@ export const dbOps = {
         return pool.request()
             .input('id', sql.Int, id)
             .input('estado', sql.NVarChar, estado)
-            .query("UPDATE notificaciones SET estado = @estado, leida = 1 WHERE id = @id");
+            .query("UPDATE notificaciones SET estado = @estado, leida = true WHERE id = @id");
     },
     limpiarNotificacionesPendientes: async (instalacion_id, notificacion_id_ignorada) => {
         const pool = await connectDB();
         return pool.request()
             .input('iid', sql.Int, instalacion_id)
             .input('nid', sql.Int, notificacion_id_ignorada)
-            .query("UPDATE notificaciones SET estado = 'Atendida', leida = 1 WHERE instalacion_id = @iid AND id != @nid AND estado = 'Pendiente' AND tipo IN ('nueva_instalacion', 'reasignacion', 'solicitud_reprogramacion')");
+            .query("UPDATE notificaciones SET estado = 'Atendida', leida = true WHERE instalacion_id = @iid AND id != @nid AND estado = 'Pendiente' AND tipo IN ('nueva_instalacion', 'reasignacion', 'solicitud_reprogramacion')");
     },
     marcarNotificacionLeida: async (id) => {
         const pool = await connectDB();
-        return pool.request().input('id', sql.Int, id).query('UPDATE notificaciones SET leida = 1 WHERE id = @id');
+        return pool.request().input('id', sql.Int, id).query('UPDATE notificaciones SET leida = true WHERE id = @id');
     },
     getInstalacionById: async (id) => {
         const pool = await connectDB();
@@ -959,7 +962,7 @@ export const dbOps = {
         return pool.request()
             .input('cid', sql.Int, chat_id)
             .input('uid', sql.Int, usuario_id)
-            .query('UPDATE mensajes SET leido = 1 WHERE chat_id = @cid AND emisor_id != @uid AND leido = 0');
+            .query('UPDATE mensajes SET leido = true WHERE chat_id = @cid AND emisor_id != @uid AND leido = false');
     },
     getUnreadChatCount: async (usuario_id) => {
         const pool = await connectDB();
