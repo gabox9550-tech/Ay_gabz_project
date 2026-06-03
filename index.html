@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AY GABZ | Industrial Suite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-layout" id="appLayout">
+        <!-- Mobile Header (Visible only on mobile) -->
+        <header class="mobile-header" id="mobileHeader">
+            <div class="brand"><span>AY GABZ</span></div>
+            <div style="display: flex; gap: 0.5rem; align-items: center">
+                <button class="cart-trigger-btn" onclick="window.openCart()" id="mobileCartBtn" style="display: none">
+                    Carrito <span class="cart-badge" id="cartBadgeMobile">0</span>
+                </button>
+                <button class="hamburger-btn" onclick="window.toggleSidebar()">☰</button>
+            </div>
+        </header>
+
+        <!-- Dashboard Sidebar -->
+        <aside class="app-sidebar" id="appSidebar">
+            <div class="sidebar-header">
+                <div class="brand" onclick="window.navigate('dashboard')">
+                    <span>AY GABZ</span>
+                </div>
+                <button class="close-sidebar-btn" onclick="window.toggleSidebar()">✕</button>
+            </div>
+
+            <nav class="sidebar-nav" id="navAdmin">
+                <button class="nav-item active" data-view="dashboard">Inicio</button>
+                <button class="nav-item" data-view="ventas">Ventas</button>
+                <button class="nav-item" data-view="productos">Inventario</button>
+                <button class="nav-item" data-view="clientes">Clientes</button>
+                <button class="nav-item" data-view="admin_chats" style="position:relative">💬 Mensajes <span id="adminChatBadge" class="notif-badge" style="display:none">0</span></button>
+            </nav>
+
+            <nav class="sidebar-nav" id="navCliente">
+                <button class="nav-item active" data-view="cliente_catalog">Catálogo</button>
+                <button class="nav-item" data-view="cliente_orders">Mis Compras</button>
+                <button class="nav-item" data-view="cliente_instalaciones">Mis Instalaciones</button>
+                <button class="nav-item" data-view="cliente_soporte" style="position:relative">💬 Soporte <span id="clientChatBadge" class="notif-badge" style="display:none">0</span></button>
+            </nav>
+
+            <nav class="sidebar-nav" id="navTecnico">
+                <button class="nav-item active" data-view="tecnico_calendario">Mi Calendario</button>
+                <button class="nav-item" data-view="tecnico_lista">Mis Instalaciones</button>
+                <button class="nav-item" data-view="tecnico_notificaciones" style="position:relative">🔔 Notificaciones <span id="notifCountBadge" class="notif-badge" style="display:none">0</span></button>
+                <button class="nav-item" data-view="tecnico_chats" style="position:relative">💬 Chats <span id="tecChatBadge" class="notif-badge" style="display:none">0</span></button>
+            </nav>
+
+            <div class="sidebar-user" id="userInfo">
+                <div class="user-meta">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-details">
+                        <span id="welcomeMsg" class="user-name">Usuario</span>
+                        <span id="roleBadge" class="user-role">Admin</span>
+                    </div>
+                </div>
+                <div class="user-actions">
+                    <button class="user-action-btn btn-settings" onclick="window.openProfileModal()">Editar Perfil</button>
+                    <button class="user-action-btn btn-logout" onclick="window.logout()">Cerrar Sesión</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content" id="mainContent">
+            <div id="view-container"></div>
+            <!-- Desktop Floating Cart -->
+            <button class="cart-floating-btn" onclick="window.openCart()" id="desktopCartBtn" style="display: none">
+                Mi Carrito <span class="cart-badge" id="cartBadgeDesktop">0</span>
+            </button>
+            <footer class="public-footer" id="publicFooter" style="display: none; padding: 2rem; border-top: 1px solid var(--border-glass); margin-top: 3rem; background: var(--bg-card); border-radius: 16px 16px 0 0;">
+               <div class="footer-content" style="max-width: 1200px; margin: 0 auto; text-align: center;">
+                  <h3 style="color: var(--primary); margin-bottom: 1rem;">Nuestras Tiendas Físicas</h3>
+                  <ul id="sucursalesList" style="list-style: none; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem;"></ul>
+               </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Global Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Modal System -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="modal" id="modalContent"></div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
