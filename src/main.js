@@ -54,7 +54,12 @@ const views = {
           const userData = await res.json();
           window.loginSuccess(userData);
         } else {
-          showToast('Credenciales inválidas', 'error');
+          try {
+            const err = await res.json();
+            showToast(err.error || 'Credenciales inválidas', 'error');
+          } catch (e) {
+            showToast('Error de conexión o servidor no disponible', 'error');
+          }
         }
       };
     }
@@ -184,9 +189,13 @@ const views = {
           showToast('¡Registro exitoso! Ya puedes iniciar sesión.', 'success');
           setTimeout(() => window.navigate('login'), 1500);
         } else {
-          const err = await res.json();
-          const displayMsg = typeof err.error === 'string' ? err.error : (Array.isArray(err.error) ? err.error[0].message : 'Error en el servidor');
-          showToast(displayMsg, 'error');
+          try {
+            const err = await res.json();
+            const displayMsg = typeof err.error === 'string' ? err.error : (Array.isArray(err.error) ? err.error[0].message : 'Error en el servidor');
+            showToast(displayMsg, 'error');
+          } catch (e) {
+            showToast('Error de conexión o servidor no disponible', 'error');
+          }
         }
       };
     }
