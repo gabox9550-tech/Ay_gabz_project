@@ -6,13 +6,27 @@ import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { z } from 'zod';
-import { dbOps, connectDB } from './db.js';
+import { createClient } from '@supabase/supabase-js';
+
+// Dual DB architecture
+import { dbOps as dbOpsLocal, connectDB as connectDBLocal } from './db.js';
+import { dbOps as dbOpsSupabase, connectDB as connectDBSupabase } from './dbSupabase.js';
+
+const USE_SUPABASE = process.env.USE_SUPABASE === 'true';
+const dbOps = USE_SUPABASE ? dbOpsSupabase : dbOpsLocal;
+const connectDB = USE_SUPABASE ? connectDBSupabase : connectDBLocal;
+
+// Supabase Storage client
+let supabaseClient = null;
+if (USE_SUPABASE) {
+  supabaseClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialize SQL Server connection pool
+// Initialize connection pool
 connectDB();
 
 // Security and Middleware
@@ -24,10 +38,12 @@ const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
 app.use('/api/', limiter);
 
 // Multer Storage Configuration
-const storage = multer.diskStorage({
-  destination: 'uploads/',
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
-});
+const storage = USE_SUPABASE 
+  ? multer.memoryStorage() 
+  : multer.diskStorage({
+      destination: 'uploads/',
+      filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+    });
 const upload = multer({ storage });
 
 // Validation Schemas
@@ -186,9 +202,27 @@ app.delete('/api/sucursales/:id', async (req, res) => {
 });
 
 // Files
-app.post('/api/upload', upload.array('files'), (req, res) => {
-  const urls = req.files.map(f => `/uploads/${f.filename}`);
-  res.json({ urls });
+app.post('/api/upload', upload.array('files'), async (req, res) => {
+  try {
+    if (USE_SUPABASE) {
+      const urls = [];
+      for (const file of req.files) {
+        const filename = `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '')}`;
+        const { data, error } = await supabaseClient.storage
+          .from('imagenes')
+          .upload(filename, file.buffer, { contentType: file.mimetype });
+        if (error) throw error;
+        const publicUrl = supabaseClient.storage.from('imagenes').getPublicUrl(filename).data.publicUrl;
+        urls.push(publicUrl);
+      }
+      res.json({ urls });
+    } else {
+      const urls = req.files.map(f => `/uploads/${f.filename}`);
+      res.json({ urls });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Core API
@@ -712,4 +746,8 @@ app.get('/api/admin/usuarios', async (req, res) => {
 
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../dist/index.html')));
 
-app.listen(PORT, () => console.log(`AY GABZ SQL Suite Server running on port ${PORT}`));
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    app.listen(PORT, () => console.log(`AY GABZ SQL Suite Server running on port ${PORT}`));
+}
+
+export default app;
