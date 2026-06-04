@@ -45,7 +45,7 @@ async function initializeSchema() {
     // Clientes
     await pool.query(`
         CREATE TABLE IF NOT EXISTS clientes (
-            id INT PRIMARY KEY SERIAL,
+            id SERIAL PRIMARY KEY,
             nombre VARCHAR(100) NOT NULL,
             apellido VARCHAR(100) NOT NULL,
             telefono VARCHAR(20) NOT NULL,
@@ -59,7 +59,7 @@ async function initializeSchema() {
     // Productos
     await pool.query(`
         CREATE TABLE IF NOT EXISTS productos (
-            id INT PRIMARY KEY SERIAL,
+            id SERIAL PRIMARY KEY,
             nombre VARCHAR(255) NOT NULL,
             descripcion TEXT,
             precio DECIMAL(18,2) NOT NULL,
@@ -74,7 +74,7 @@ async function initializeSchema() {
     // Usuarios
     await pool.query(`
         CREATE TABLE IF NOT EXISTS usuarios (
-            id INT PRIMARY KEY SERIAL,
+            id SERIAL PRIMARY KEY,
             nombre VARCHAR(100) NOT NULL,
             apellido VARCHAR(100) NOT NULL,
             email VARCHAR(255) UNIQUE NOT NULL,
@@ -89,7 +89,7 @@ async function initializeSchema() {
     // Ventas
     await pool.query(`
         CREATE TABLE IF NOT EXISTS ventas (
-            id INT PRIMARY KEY SERIAL,
+            id SERIAL PRIMARY KEY,
             cliente_id INT NOT NULL,
             producto_id INT NOT NULL,
             cantidad INT NOT NULL,
@@ -103,7 +103,7 @@ async function initializeSchema() {
     // Sucursales
     await pool.query(`
         CREATE TABLE IF NOT EXISTS sucursales (
-            id INT PRIMARY KEY SERIAL,
+            id SERIAL PRIMARY KEY,
             direccion TEXT NOT NULL
         )
     `);
@@ -113,7 +113,7 @@ async function initializeSchema() {
     // Técnicos Instaladores
     await pool.query(`
         CREATE TABLE IF NOT EXISTS tecnicos (
-            id INT PRIMARY KEY SERIAL,
+            id SERIAL PRIMARY KEY,
             nombre_completo VARCHAR(200) NOT NULL,
             telefono VARCHAR(20) NOT NULL,
             numero_id VARCHAR(50) UNIQUE NOT NULL,
@@ -128,7 +128,7 @@ async function initializeSchema() {
     // Instalaciones
     await pool.query(`
         CREATE TABLE IF NOT EXISTS instalaciones (
-            id INT PRIMARY KEY SERIAL,
+            id SERIAL PRIMARY KEY,
             venta_id INT,
             cliente_id INT,
             tecnico_id INT,
@@ -148,7 +148,7 @@ async function initializeSchema() {
     // Direcciones del cliente (múltiples)
     await pool.query(`
         CREATE TABLE IF NOT EXISTS direcciones_cliente (
-            id INT PRIMARY KEY SERIAL,
+            id SERIAL PRIMARY KEY,
             cliente_id INT NOT NULL,
             direccion TEXT NOT NULL,
             etiqueta VARCHAR(100) DEFAULT 'Casa',
@@ -161,7 +161,7 @@ async function initializeSchema() {
     // Notificaciones (solicitudes de cambio)
     await pool.query(`
         CREATE TABLE IF NOT EXISTS notificaciones (
-            id INT PRIMARY KEY SERIAL,
+            id SERIAL PRIMARY KEY,
             tipo VARCHAR(50) NOT NULL,
             instalacion_id INT,
             emisor_id INT,
@@ -179,7 +179,7 @@ async function initializeSchema() {
     // Chats (conversaciones entre usuarios)
     await pool.query(`
         CREATE TABLE IF NOT EXISTS chats (
-            id INT PRIMARY KEY SERIAL,
+            id SERIAL PRIMARY KEY,
             tipo VARCHAR(50) NOT NULL,
             instalacion_id INT,
             usuario1_id INT NOT NULL,
@@ -197,7 +197,7 @@ async function initializeSchema() {
     // Mensajes (mensajes individuales en cada chat)
     await pool.query(`
         CREATE TABLE IF NOT EXISTS mensajes (
-            id INT PRIMARY KEY SERIAL,
+            id SERIAL PRIMARY KEY,
             chat_id INT NOT NULL,
             emisor_id INT NOT NULL,
             contenido TEXT NOT NULL,
@@ -210,8 +210,7 @@ async function initializeSchema() {
 
     // Agregar columna estado a ventas si no existe
     await pool.query(`
-        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('ventas') AND name = 'estado')
-        ALTER TABLE ventas ADD estado VARCHAR(50) DEFAULT 'Completada'
+        ALTER TABLE ventas ADD COLUMN IF NOT EXISTS estado VARCHAR(50) DEFAULT 'Completada';
     `);
 }
 
