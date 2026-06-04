@@ -19,7 +19,9 @@ const connectDB = USE_SUPABASE ? connectDBSupabase : connectDBLocal;
 // Supabase Storage client
 let supabaseClient = null;
 if (USE_SUPABASE) {
-  supabaseClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+  const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
+  const supabaseKey = (process.env.SUPABASE_ANON_KEY || '').trim();
+  supabaseClient = createClient(supabaseUrl, supabaseKey);
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
