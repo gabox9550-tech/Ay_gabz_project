@@ -12,7 +12,7 @@ export async function connectDB() {
     try {
         if (!pool) {
             console.log('Intentando conectar a PostgreSQL (Supabase)...');
-            pool = new Pool({ connectionString });
+            pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
             await pool.query('SELECT 1');
             console.log('✅ --- Conectado a PostgreSQL (Supabase) ---');
             await initializeSchema();
