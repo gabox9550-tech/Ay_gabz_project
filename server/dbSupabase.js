@@ -12,7 +12,22 @@ export async function connectDB() {
     try {
         if (!pool) {
             console.log('Intentando conectar a PostgreSQL (Supabase)...');
-            pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
+            console.log('DATABASE_URL definida:', !!connectionString);
+            
+            // Parse DATABASE_URL manually to avoid pg library URL parsing bugs
+            // with dotted usernames like postgres.projectref
+            const dbUrl = new URL(connectionString);
+            const poolConfig = {
+                user: decodeURIComponent(dbUrl.username),
+                password: decodeURIComponent(dbUrl.password),
+                host: dbUrl.hostname,
+                port: parseInt(dbUrl.port) || 6543,
+                database: dbUrl.pathname.slice(1) || 'postgres',
+                ssl: { rejectUnauthorized: false }
+            };
+            console.log('Conectando a host:', poolConfig.host, 'puerto:', poolConfig.port, 'user:', poolConfig.user);
+            
+            pool = new Pool(poolConfig);
             await pool.query('SELECT 1');
             console.log('✅ --- Conectado a PostgreSQL (Supabase) ---');
             await initializeSchema();
